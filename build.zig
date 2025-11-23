@@ -8,10 +8,15 @@ pub fn build(b: *std.Build) void {
         .name = "zoriand",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
+            .link_libc = true,
             .target = target,
             .optimize = optimize,
         }),
     });
+
+    exe.root_module.linkSystemLibrary("ssl", .{});
+    exe.root_module.linkSystemLibrary("crypto", .{});
+
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Run the app");
