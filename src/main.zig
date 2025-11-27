@@ -2,10 +2,11 @@ const std = @import("std");
 const posix = std.posix;
 const assert = std.debug.assert;
 
-const stdx = @import("./stdx.zig");
-const config = @import("./config.zig");
-const network = @import("./network.zig");
-const backendZig = @import("./backend_zig.zig");
+const Cli = @import("cli.zig");
+const Config = @import("config.zig");
+const stdx = @import("stdx.zig");
+const network = @import("network.zig");
+const backendZig = @import("backend/zig.zig");
 
 const response_ok =
     "HTTP/1.1 200 OK\r\n" ++
@@ -24,18 +25,46 @@ const response_bad_request =
     "Content-Length: 0\r\n" ++
     "Connection: close\r\n";
 
+test {
+    std.testing.refAllDecls(@This());
+}
+
 pub fn main() !void {
+    var gpa_instance = std.heap.DebugAllocator(.{}){};
+    defer _ = gpa_instance.deinit();
+    const gpa = gpa_instance.allocator();
+
+    var arena_instance = std.heap.ArenaAllocator.init(gpa);
+    defer _ = arena_instance.deinit();
+    const arena = arena_instance.allocator();
+
+    // Load configuration
+    var args = try std.process.argsWithAllocator(arena);
+    defer args.deinit();
+
+    const argv = Cli.parse(&args);
+
+    const config = Config.parse(arena, argv.config) catch |err| {
+        switch (err) {
+            error.OutOfMemory => @panic("OOM"),
+            else => {
+                stdx.fatal("Unable to open configuration file: {}", .{err});
+            },
+        }
+    };
+
+    // Start server
     try network.SocketTls.global_init();
 
     const server_fd = try posix.socket(posix.AF.INET, posix.SOCK.STREAM, 0);
     defer posix.close(server_fd);
 
-    const port = std.mem.bigToNative(u16, 8001);
+    const port = std.mem.bigToNative(u16, config.server.port);
     var addr = posix.sockaddr.in{ .family = posix.AF.INET, .addr = 0, .port = port };
     var addr_len: posix.socklen_t = @sizeOf(posix.sockaddr.in);
 
     try posix.bind(server_fd, @ptrCast(@alignCast(&addr)), addr_len);
-    try posix.listen(server_fd, config.max_pending_connections);
+    try posix.listen(server_fd, Config.max_pending_connections);
 
     while (true) {
         const client_fd = posix.accept(server_fd, @ptrCast(@alignCast(&addr)), &addr_len, 0) catch |err| {
@@ -49,10 +78,10 @@ pub fn main() !void {
 
         std.log.info("connection", .{});
 
-        var req_buf: [config.max_request_size]u8 = undefined;
+        var req_buf: [Config.max_request_size]u8 = undefined;
         const read_bytes = try posix.read(@intCast(client_fd), &req_buf);
 
-        var res_buf: [config.max_response_size]u8 = undefined;
+        var res_buf: [Config.max_response_size]u8 = undefined;
 
         const request = network.Request.parse(req_buf[0..read_bytes]) catch {
             _ = try posix.write(@intCast(client_fd), response_bad_request);

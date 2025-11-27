@@ -4,6 +4,12 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const manifest = Manifest.init(b);
+    defer manifest.deinit(b.allocator);
+
+    const options = b.addOptions();
+    options.addOption([]const u8, "version", manifest.version);
+
     const exe = b.addExecutable(.{
         .name = "zoriand",
         .root_module = b.createModule(.{
@@ -16,6 +22,8 @@ pub fn build(b: *std.Build) void {
 
     exe.root_module.linkSystemLibrary("ssl", .{});
     exe.root_module.linkSystemLibrary("crypto", .{});
+
+    exe.root_module.addOptions("config", options);
 
     b.installArtifact(exe);
 
@@ -36,3 +44,31 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_exe_tests.step);
 }
+
+const Manifest = struct {
+    version: []const u8,
+
+    fn init(b: *std.Build) Manifest {
+        const input = @embedFile("build.zig.zon");
+
+        var diagnostics: std.zon.parse.Diagnostics = .{};
+        defer diagnostics.deinit(b.allocator);
+
+        return std.zon.parse.fromSlice(Manifest, b.allocator, input, &diagnostics, .{
+            .free_on_error = true,
+            .ignore_unknown_fields = true,
+        }) catch |err| {
+            switch (err) {
+                error.OutOfMemory => @panic("OOM"),
+                error.ParseZon => {
+                    std.debug.print("Parse diagnostics:\n{f}\n", .{diagnostics});
+                    std.process.exit(1);
+                },
+            }
+        };
+    }
+
+    fn deinit(self: Manifest, allocator: std.mem.Allocator) void {
+        allocator.free(self.version);
+    }
+};

@@ -7,9 +7,11 @@ path = [
     ".gitignore",
     "*.md",
     "REUSE.toml",
+    "Dockerfile",
     "build.zig",
     "build.zig.zon",
     "package/**",
+    "pkg/**",
     "src/**",
 ]
 SPDX-FileCopyrightText = "Nikolay Govorov"

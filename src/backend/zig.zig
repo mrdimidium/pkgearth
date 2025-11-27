@@ -1,7 +1,7 @@
 const std = @import("std");
 const SemanticVersion = std.SemanticVersion;
 
-const stdx = @import("stdx.zig");
+const stdx = @import("../stdx.zig");
 
 const Source = @This();
 

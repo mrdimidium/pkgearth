@@ -4,6 +4,12 @@
 const std = @import("std");
 const assert = std.debug.assert;
 
+/// Format and print an error message to stderr, then exit with an exit code of 1.
+pub fn fatal(comptime fmt_string: []const u8, args: anytype) noreturn {
+    std.log.err(fmt_string, args);
+    std.process.exit(1);
+}
+
 /// Returns a pointer with a lower address.
 pub fn minPtr(comptime T: type, a: T, b: T) T {
     return if (@intFromPtr(a) < @intFromPtr(b)) a else b;
@@ -31,7 +37,7 @@ pub fn overlapSlices(comptime T: type, parent: []const T, a: []const T, b: []con
     return bgn[0 .. end - bgn];
 }
 
-test "overlapSlices" {
+test overlapSlices {
     const buf: []const u8 = "Lorem Ipsum is simply";
 
     // a to the left of b, do not overlap
