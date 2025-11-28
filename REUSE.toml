@@ -10,6 +10,7 @@ path = [
     "Dockerfile",
     "build.zig",
     "build.zig.zon",
+    "goreleaser.yml",
     "package/**",
     "pkg/**",
     "src/**",

@@ -18,7 +18,7 @@ cd Zorian
 zig build -Doptimize=ReleaseSafe
 
 # Create an unprivileged user for the daemon
-sudo useradd -r -M -s /sbin/nologin zoriand
+sudo useradd -r -M -s /sbin/nologin zorian
 
 # Copy the executable file (if you choose a different path, update the daemon file)
 sudo install -m 755 -o root ./zig-out/bin/zorian /usr/local/bin

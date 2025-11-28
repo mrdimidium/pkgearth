@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     options.addOption([]const u8, "version", manifest.version);
 
     const exe = b.addExecutable(.{
-        .name = "zoriand",
+        .name = "zorian",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/main.zig"),
             .link_libc = true,

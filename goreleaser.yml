@@ -1,0 +1,45 @@
+version: 2
+
+project_name: zorian
+
+checksum:
+  name_template: "checksums.txt"
+
+builds:
+  - builder: zig
+    flags:
+      - -Doptimize=ReleaseSafe
+    targets: [x86_64-linux, aarch64-linux]
+
+archives:
+  - format: binary
+
+nfpms:
+  - id: "pkg"
+    package_name: zorian
+
+    license: AGPL-3.0-or-later
+    homepage: https://github.com/mrdimidium/Zorian
+    maintainer: Nikolay Govorov <me@govorov.online>
+    description: |
+      A reverse proxy for dependencies with caching to speed up local builds,
+      analytics, and protect against external registry failures.
+
+    formats: [apk, deb, rpm, archlinux]
+    contents:
+      - src: ./LICENSE
+        dst: /usr/share/doc/zorian/LICENSE
+      - src: ./README.md
+        dst: /usr/share/doc/zorian/README.md
+
+      - src: ./pkg/zorian.service
+        dst: /lib/systemd/system/zorian.service
+        type: config
+
+      - src: ./pkg/zorian.zon
+        dst: /etc/zorian.zon
+        type: config|noreplace
+        file_info: { mode: 0755, owner: zorian }
+
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj

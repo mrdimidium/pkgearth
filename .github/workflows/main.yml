@@ -38,6 +38,23 @@ jobs:
         run: |
           zig build test
 
+      - name: Package
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: 'latest'
+          args: release --snapshot --clean
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: |
+            dist/*.apk
+            dist/*.deb
+            dist/*.rpm
+            dist/*.pkg.tar.zst
+            dist/checksums.txt
+
   release:
     name: Update niglty tag
     runs-on: ubuntu-latest
